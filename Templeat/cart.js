@@ -4,7 +4,7 @@ const sharp = require('sharp');
 const { Scenes, Markup, session ,Input} = require("telegraf")
 module.exports = {
      sendCartProduct: async function (ctx, productId, cart, iscart) {
-        console.log("cart data...........................",cart.product.video);
+        // console.log("cart data...........................",cart.product.video);
         const formatTelegramMessage = (product) => {
             const { name, description, price, available, warranty, category, highlights, images, createdAt } = product;
 
@@ -36,7 +36,7 @@ module.exports = {
             caption = caption.substring(0, 100) + '...';
         }
         const image  = await cart?.product?.images[0]?.imageUrl;
-        console.log("cart image looks like in the cart.................",image)
+        // console.log("cart image looks like in the cart.................",image)
         if (ctx.session.cleanUpState && ctx.session.cleanUpState.find(message => message?.type === 'cart' && message?.productId === productId)) {
             const messageId = ctx.session.cleanUpState.find(message => message?.type === 'cart' && message?.productId === productId).id;
             if(image){
@@ -132,7 +132,7 @@ module.exports = {
                     productId:productId
                 };
             }else if(cart?.product?.video){
-                console.log("vedio ex,,,,,,,,,,,,,,,,,,,,,,,,,,,",cart?.product?.video)
+                // console.log("vedio ex,,,,,,,,,,,,,,,,,,,,,,,,,,,",cart?.product?.video)
                 const message = await ctx.replyWithVideo(Input.fromURLStream( cart?.product?.video?.videoUrl || ''),/* { source: product?.video?.videoUrl }, */ {
                     caption: caption,
                     // thumb:"https://th.bing.com/th/id/OIP.O8X2cM_d8XTou4d3_YlbgAHaLH?rs=1&pid=ImgDetMain",

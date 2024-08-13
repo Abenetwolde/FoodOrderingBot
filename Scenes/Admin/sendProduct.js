@@ -4,36 +4,40 @@ const { sendProdcutSummary } = require('../../Templeat/summary');
 const axios = require('axios');
 const sharp = require('sharp');
 const  Product =require( '../../Model/product');
+const config =require('../../config')
 module.exports = {
     sendProductToChannel: async function (ctx, productd, product, isCart) {
         const formatTelegramMessage = (product) => {
             const { name, description,images, price, available, warranty, category, highlights } = product;
 
             const formattedHighlights = highlights?.map((highlight) => `${highlight}`).join(', ');
-          const formattedButton=images.length === 1?"":`\n\n[Buy](https://t.me/testecommerce12bot?start=chat_${productId}) `
+          const formattedButton=images.length === 1?"":`\n\n👉[Buy]👈(https://t.me/elitesporttgbot?start=chat_${productId}) `
            
         
-
+ 
             return `
 ${category?.icon} ${name} ${category?.icon}
 ✨ ${description}
 💴 ${price} ETB
-🚀 ${formattedHighlights} 
-${formattedButton}
+▫️ ${formattedHighlights} 
 .
 .
 #${category?.name} ${category?.icon}
-
-
+${formattedButton}
+ 
+ 
+  
+  
       `;
         };
         const productId = productd.toString()
         const caption = `${formatTelegramMessage(product)}`;
         const paginationKeyboard = Markup.inlineKeyboard([
-            Markup.button.url('Order 📔', `https://t.me/testecommerce12bot?start=chat_${productId}`),
+            //https://t.me/elitesporttgbot
+            Markup.button.url('Order 📔', `https://t.me/elitesporttgbot?start=chat_${productId}`),
         ]);
 
-        const channelId = -1002011345443;
+        const channelId =config.telegramChannelId;
         const images = product?.images.map(image => image.imageUrl);
      
         let mediaGroup=[]

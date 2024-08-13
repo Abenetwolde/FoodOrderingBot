@@ -8,10 +8,10 @@ aboutUs.enter(async (ctx) => {
     const enterTime = new Date();
     ctx.scene.state.enterTime = enterTime;
 
-    const aboutme = await ctx.reply('👋ሰላም, I’m Abnet Wolde,\n a Software developer based in Ethiopia, specializing in the latest JavaScript frameworks.\n\n'
+    const aboutme = await ctx.reply('👋ሰላም, I’m Abnet Wolde,\n a Software developer based in Ethiopia, experienced in the latest JavaScript frameworks.\n\n'
         + 'Email: abnetwoldedev@gmail.com\n'
-        + '[LinkedIn](https://www.linkedin.com/in/abnet-wolde-8b3923220/)\n'
-        + '[GitHub](https://github.com/Abenetwolde)\n'
+        + '[GitHub](https://www.github.com/Abenetwolde/)\n'
+        + '[LinkedIn](https://www.linkedin.com/in/abnet-wolde-8b3923220/)\n' 
         + '[Telegram](https://t.me/abnet_abi)',
 
         {
@@ -73,7 +73,7 @@ aboutUs.leave(async (ctx) => {
         performance.mark('end-leave');
         performance.measure('leave-time', 'start-leave', 'end-leave');
         const measurement = performance.getEntriesByName('leave-time')[0];
-        console.log(`Execution time for aboutUs.leave: ${measurement.duration} milliseconds`);
+        
     } catch (error) {
         console.error('Error saving UserKPI in homeScene.leave:', error);
     }

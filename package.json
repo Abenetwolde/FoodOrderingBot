@@ -7,7 +7,7 @@
   "scripts": {
     "startpm2": "pm2 start ecosystem.config.cjs",
     "stoppm2": "pm2 stop ecosystem.config.cjs",
-    "start": "nodemon index.js",
+    "start": "nodemon --max-old-space-size=4096 index.js",
     "dev": "nodemon --inspect index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm install --legacy-peer-deps"

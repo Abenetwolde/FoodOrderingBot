@@ -89,7 +89,7 @@ adminBaseScene.hears('NewUser', async (ctx) => {
 adminBaseScene.hears('NewOrder', async (ctx) => {
   const orders = await getAllOrder();
   const totalUsers = orders?.orders?.length;
-console.log(orders)
+
   // Construct the message body with the list of users
   let message = `Total Orders Today: ${totalUsers}\n\n`;
   orders?.orders?.forEach((order, index) => {

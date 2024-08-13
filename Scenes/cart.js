@@ -122,7 +122,7 @@ cart.action(/(removeQuantity)_(.+)/, async (ctx) => {
 
 cart.action(/(addQuantity)_(.+)/, async (ctx) => {
   const productId = ctx.match[2];
-  console.log(productId)
+
   const userId = ctx.from.id;
 
 
@@ -164,7 +164,7 @@ cart.leave(async (ctx) => {
     if (ctx.session.cleanUpState) {
       ctx.session.cleanUpState.map(async (message) => {
         if (message?.type === 'nocartmessage' || message?.type === 'cart' || message?.type === 'summary') {
-          console.log("reach cart leave scene")
+   
           try {
             await ctx.telegram.deleteMessage(ctx.chat.id, message?.id);
             } catch (error) {

@@ -21,13 +21,13 @@ feedback.enter(async (ctx) => {
 
 })
 feedback.on("message", async (ctx) => {
-    console.log("message", ctx.message.text)
+    // console.log("message", ctx.message.text)
     const text = ctx.message.text
     if (text === "❌ Cancel" || text === "/start")
         return await ctx.scene.enter("homeScene")
-ctx.session.userfeedback=ctx.message.text;
+ctx.session.userfeedback=await ctx.message.text;
     const feedbackmessage = await ctx.replyWithHTML(`This is the FeedBack that you wish to leave?: <i>${ctx.message.text}</i>`,
-
+ 
         Markup.inlineKeyboard([
             Markup.button.callback("✅ Confirm", "confirm"),
             Markup.button.callback("❌ Edit", "edit"),
@@ -42,22 +42,27 @@ feedback.action("❌ Cancel", async (ctx) => {
 
 feedback.action("confirm", async (ctx) => {
     const text = ctx.session.userfeedback
-    console.log("message on log", ctx.session.userfeedback)
-     console.log("message on log", ctx.update.message)
+    // console.log("message on log", ctx.session.userfeedback)
+    
     if (text === "❌ Cancel" || text === "/start")
         return
     // const response = FeedBack.findOne({ telegramid: ctx.from.id })
     // if (!response) {
-    let data = { telegramid: ctx.from.id, first_name: ctx.from.first_name, username: ctx.from.username, feedback: text }
-    const result = await FeedBack(data)
+    let data = { user: ctx.session.userid, feedback: text }
+    try {
+        const result = await FeedBack(data)
     await result.save();
-    console.log("result", result)
+    // console.log("result", result)
     if(result){
     ctx.session.userfeedback=""
     const feedbackmessage = await ctx.replyWithHTML(`Your Feedback has been sent!seccessfuly `)
     await updateClicks(ctx,"feedback","feedback")
     await ctx.scene.leave()
+    }  
+    } catch (error) {
+       console.log(error) 
     }
+  
 
     
     // }

@@ -6,13 +6,14 @@ const { t, match } = require('telegraf-i18next');
 const { getAllCategories } = require("../Database/categoryController");
 const homeScene = new Scenes.BaseScene('homeScene');
 
-const UserKPI = require("../Model/KpiUser");
 const User = require("../Model/user");
-const KpiCategorys = require("../Model/KpiCategory");
+
 const { updateSceneDuration } = require("../Utils/calculateTimeSpent");
 const { updateClicks } = require("../Utils/calculateClicks");
 const { createUser } = require("../Database/UserController");
 const { checkUserToken } = require("../Utils/checkUserToken");
+const user = require("../Model/user");
+const config = require("../config");
 homeScene.enter(async (ctx) => {
     try {
         if (ctx.session.cleanUpState) {
@@ -26,7 +27,7 @@ homeScene.enter(async (ctx) => {
         await ctx.sendChatAction('typing');
 
         const userToken = await checkUserToken(`${ctx.from.id}`, ctx)
-          console.log("userToken", userToken)
+
 
           if (userToken == null) {
             try {
@@ -40,7 +41,7 @@ homeScene.enter(async (ctx) => {
                 language: ctx.session.locale
               });
               if (response) {
-                console.log("response.data", response)
+             
                 ctx.session.userid = response.user._id.toString();
                 ctx.session.token = response.token;
               }
@@ -61,7 +62,7 @@ homeScene.enter(async (ctx) => {
         ctx.session.cleanUpState = ctx.session.cleanUpState || [];
 
         const categories = await getAllCategories();
-
+// console.log("category....", categories)
         const pairs = categories?.categories.reduce((result, value, index, array) => {
             if (index % 2 === 0)
                 result.push(array.slice(index, index + 2));
@@ -71,7 +72,7 @@ homeScene.enter(async (ctx) => {
 
         const userId = ctx.from.id;
         // get the chat ID or username of the channel
-        const chatId = '@takeitorle';
+        const chatId = config.channelusername
         // get the chat member information
         await ctx.telegram.getChatMember(chatId, userId)
             .then(user => {
@@ -90,8 +91,8 @@ homeScene.enter(async (ctx) => {
 
             let keyboard = [
                 [ctx.i18next.t('Search'), ctx.i18next.t('cart')],
-                [ctx.i18next.t('order'), ctx.i18next.t('Language')],
-                [ctx.i18next.t('aboutus'), ctx.i18next.t('invite'), ctx.i18next.t('feedback')]
+                [ctx.i18next.t('order'),ctx.i18next.t('invite'),],
+                [ctx.i18next.t('aboutus'),  ,ctx.i18next.t('feedback'), ctx.i18next.t('Language'),ctx.i18next.t('rate')]
             ];
             if (showkey) {
 
@@ -134,90 +135,43 @@ homeScene.action(/category_(.+)/, async (ctx) => {
     const [categoryId, categoryName, categoryIcon] = callbackData.split('_');
 
     // Now, you have both the category ID and name separately
-    console.log('Category ID:', categoryId);
-    console.log('Category Name:', categoryName);
+    // console.log('Category ID:', categoryId);
+    // console.log('Category Name:', categoryName);
 
 
 
     const userId = ctx.from.id.toString()
 
 await updateClicks(ctx,"category",categoryId)
-    // if (!clickCount) {
-    //     try {
-    //         createclickCount = await new KpiCategorys({
-    //             category: categoryId,
-    //             clicks: [{
-    //                 // date: today,
-    //                 count: 1,
-    //                 userId: String(userId)
-    //             }]
-    //         });
-    //         await createclickCount.save()
-    //         // console.log("clickCount1", clickCount);
-    //     } catch (error) {
-    //         console.log("error", error)
-    //     }
-
-
-    // } else {
-    //     const today = new Date();
-    //     today.setHours(0, 0, 0, 0); // Set to the beginning of the day
-    //     const tomorrow = new Date(today);
-    //     tomorrow.setDate(tomorrow.getDate() + 1);
-    //     let clickCount1 = await KpiCategorys.findOne({
-    //         category: categoryId,   clicks: {
-    //             $elemMatch: { 
-    //               userId: userId, 
-    //                date: { $gte: today, $lt: tomorrow } // Filter clicks for today
-    //              } 
-    //           }
-    //     });
-
-
-    //     if (clickCount1!==null) {
-    //         const todayClick = clickCount1.clicks.find(click => {
-    //             // Ensure the date comparison is in UTC
-    //             const clickDate = new Date(click.date);
-    //             return click.userId === userId && clickDate >= today && clickDate < tomorrow;
-    //         });
-        
-    //         if (todayClick) {
-    //             todayClick.count++;
-    //             await clickCount1.save();
-    //             console.log("Count incremented successfully.");
-    //         } else {
-    //             console.log("No click found for today.");
-    //         }
-    //         // await clickCount1.clicks[0].count++;
-            
-    //     } else {
-    //         let list = await KpiCategorys.findOne({
-    //             category: categoryId
-    //         });
-  
-    //          list.clicks.push({
-    //              count: 1,
-    //             userId: String(userId)
-    //         });
-    //         await list.save()
-    //         console.log("clickCount......of>>perdate", list)
-    //     }
-    //     // await clickCount1.save()
-
-
-        
-    // }
-
-    // await clickCount.save()
-    // ctx.scene.enter('product',  { category: categoryId });
-    await ctx.scene.enter('product', { category: { id: categoryId, name: categoryName, icon: categoryIcon } });
+        await ctx.scene.enter('product', { category: { id: categoryId, name: categoryName, icon: categoryIcon } });
  
 }); 
 homeScene.hears(match('Search'), async (ctx) => {
     await ctx.scene.enter("searchProduct")
     await updateClicks(ctx,"home_scene","home_scene")
 })
-
+homeScene.hears(match('rate'), async (ctx) => {
+    await ctx.replyWithHTML('Please rate our bot.', Markup.inlineKeyboard([
+        [Markup.button.callback('⭐', 'rate_1'), Markup.button.callback('⭐⭐', 'rate_2')],
+        [Markup.button.callback('⭐⭐⭐ ', 'rate_3'), Markup.button.callback('⭐⭐⭐⭐', 'rate_4')],
+        [Markup.button.callback('⭐⭐⭐⭐', 'rate_5')],
+        [Markup.button.callback('No thanks', 'rate_6'), Markup.button.callback('Later', 'rate_7')]
+    ]));
+    await updateClicks(ctx,"home_scene","home_scene")
+})
+homeScene.action(/rate_(\d)/,async(ctx)=>{
+    const userId = ctx.from.id;
+    const rating = ctx.match[1];
+    await user.findOneAndUpdate(
+        { telegramid: userId },
+        { isUserRatedTheBot: rating },
+        { new: true }
+    );
+ctx.session.isUserRatedTheBot=rating
+    // Send confirmation message
+    await ctx.reply(`Thank you for your feedback!`);
+    await ctx.scene.reenter()
+})
 homeScene.hears(match('cart'), async (ctx) => {
     await ctx.scene.enter("cart")
     await updateClicks(ctx,"home_scene","home_scene")
@@ -237,7 +191,7 @@ homeScene.hears(match('aboutus'), async (ctx) => {
     await ctx.scene.enter("aboutus")
     await updateClicks(ctx,"home_scene","home_scene")
 })
-const bot = new Telegraf("6372866851:AAE3TheUZ4csxKrNjVK3MLppQuDnbw2vdaM", {
+const bot = new Telegraf(config.telegramBotToken, {
     timeout: Infinity
 });
 homeScene.hears(match('invite'), async (ctx) => {

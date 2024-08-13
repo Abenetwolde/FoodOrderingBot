@@ -53,7 +53,7 @@ module.exports = {
             summary += `💳 Payment Type: ${paymentType}\n`
         }
         summary += `\nTotal Quantity: ${totalQuantity}\nTotal Price: <u>${totalPrice} ETB</u>`;
-        console.log("summary", summary)
+        // console.log("summary", summary)
 
         // Check if there is a previous summary message ID stored in the cleanUpState array
         if (ctx.session.cleanUpState && ctx.session.cleanUpState.find(message => message?.type === 'summary')) {

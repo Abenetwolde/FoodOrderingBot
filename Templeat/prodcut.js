@@ -6,6 +6,7 @@ const { Scenes, Markup, session, Input } = require("telegraf")
 const { ObjectId } = require('mongodb');
 const { getCart } = require('../Database/cartController');
 const prodcut = require('../Services/prodcut');
+const { url } = require('inspector');
 
 module.exports = {
     displyProdcut: async function (ctx, producs, viewmore) {
@@ -25,7 +26,7 @@ module.exports = {
 
             // ctx.session.availableSizes[productId] = ['37', '46', '48', '67'];
             ctx.session.currentImageIndex[productId] = 0;
-            ctx.session.viewMore[productId] = viewmore ? true : false;
+            ctx.session.viewMore[productId] = true;
             const messageInfo = await module.exports.sendProduct(ctx, productId, product);
 
             ctx.session.cleanUpState.push(messageInfo);
@@ -35,30 +36,23 @@ module.exports = {
     },
 
     sendProduct: async function (ctx, productId, product, iscart) {
-        // console.log("reach", productId) 
+        //  console.log("reach", productId) 
 
         // console.log("reach prodcut", product)
         const formatTelegramMessage = (product) => {
             const { name, description, price, available, warranty, category, highlights, images, createdAt } = product;
             const fromatImage = product?.video?.videoUrl ? " " : ` 🖼️ Images: ${ctx.session.currentImageIndex[productId] + 1}/${images.length}`
             const formattedHighlights = highlights?.map((highlight) => ` ${highlight}`).join(',');
-            const foooormatedhighrlight= formattedHighlights&&`🚀 ${formattedHighlights}`
+            const foooormatedhighrlight= formattedHighlights&&`▫️ ${formattedHighlights}`
             const formattedprice = product.quantity !== 0 && ctx.session.viewMore[productId] ?
 
                 ` 
           
-          💳 ${product.quantity}x${product.price}= ${product.quantity * product.price} ETB` : ''
+          💳 ${product?.quantity}x${product?.price}= ${product.quantity * product.price} ETB` : ''
 
            
             return `
-         ${category?.icon} ${name} ${category?.icon}
-         ✨ ${description}
-         💴 ${price} ETB
-         #${category?.name} ${category?.icon}
-         ${foooormatedhighrlight}
-         ${formattedprice}
-           ---
-         ${fromatImage}\n
+         ${category?.icon} ${name} ${category?.icon}\n✨ ${description}\n 💴 ${price} ETB\n${foooormatedhighrlight}\n#${category?.name} ${category?.icon}\n${product?.quantity>0?formattedprice:''}\n${fromatImage}\n
         
         
             `;
@@ -86,32 +80,33 @@ module.exports = {
             if (productMessage) {
                 const messageId = productMessage.id;
                 const viewMore = ctx.session.viewMore[productId];
-                console.log("viewMore...........", viewMore)
+                // console.log("viewMore...........", viewMore)
                 const quantity = product.quantity;
-                console.log("quantity...........", product.quantity)
+                // console.log("quantity...........", product.quantity)
                 const price = product.price;
                 const currency = product.currency;
 
                 let keyboard = [];
                 let check = ctx.session.currentImageIndex[productId] < product.images.length
-                console.log("check...................", check)
+            
 
-                if (quantity == 0 && product?.images.length > 1) {
+                if (quantity == 0 && product?.images/* .length > 1 */) {
                     keyboard.push([
                         Markup.button.callback('⬅️', `previous_${productId}`),
-                        viewMore ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('View More', `viewMore_${productId}`),
+Markup.button.callback('🛒 Buy', `buy_${productId}`),
+                        // viewMore ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('View More', `viewMore_${productId}`),
                         Markup.button.callback('➡️', `next_${productId}`)
                     ]);
                 } else if (quantity > 0 && product?.images.length == 1) {
                     keyboard.push([
                         // Markup.button.callback('⬅️', `previous_${productId}`),
-                        viewMore ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('🔼 View More', `viewMore_${productId}`),
+                        // viewMore ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('🔼 View More', `viewMore_${productId}`),
                         // Markup.button.callback('➡️', `next_${productId}`)
                     ]);
                 } else if (quantity == 0 && product?.images.length == 1) {
                     keyboard.push([
                         // Markup.button.callback('⬅️', `previous_${productId}`),
-                        viewMore ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('🔼 View More', `viewMore_${productId}`),
+                        // viewMore ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('🔼 View More', `viewMore_${productId}`),
                         // Markup.button.callback('➡️', `next_${productId}`)
                     ]);
                 }
@@ -124,9 +119,9 @@ module.exports = {
                     ], [
                         Markup.button.callback('Go To Checkout', `Checkout`)
                     ]);
-                } else if (viewMore) {
+                } /* else if (viewMore) {
                     keyboard.push([Markup.button.callback('🛒 Buy', `buy_${productId}`)]);
-                }
+                } */
                 else if (!viewMore&&product?.video?.videoUrl) {
                     keyboard.push([Markup.button.callback('🛒 Buy', `buy_${productId}`)]);
                 }
@@ -182,18 +177,18 @@ module.exports = {
                 if (image) {
                     const resizeimage = image
                     // console.log("imagebuferx............", resizeimage)
-                    const response = await axios.get(resizeimage, { responseType: 'arraybuffer' });
-                    const imageBuffer = await sharp(response.data)
-                        .resize(200, 200)
-                        .toBuffer();
+                    // const response = await axios.get(resizeimage, { responseType: 'arraybuffer' });
+                    // const imageBuffer = await sharp(response.data)
+                    //     .resize(200, 200)
+                    //     .toBuffer();
                     // console.log("buffer............", imageBuffer)
-                    const message = await ctx.replyWithPhoto({ source: imageBuffer }, {
+                    const message = await ctx.replyWithPhoto({ url: resizeimage }, {
                         caption: telegramMessage,
                         ...Markup.inlineKeyboard([
                             !product.quantity/*   === 0 */ ? [
                                 ...(product.images.length !== 1 ? [Markup.button.callback('⬅️', `previous_${productId}`)] : []),
-
-                                ctx.session.viewMore[productId] ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('View More', `viewMore_${productId}`),
+                                Markup.button.callback('🛒 Buy', `buy_${productId}`),
+                                // ctx.session.viewMore[productId] ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('View More', `viewMore_${productId}`),
                                 ...(product.images.length !== 1 ? [Markup.button.callback('➡️', `next_${productId}`)] : []),
                                 // Markup.button.callback('➡️', `next_${productId}`),
                                 // ...(ctx.session.viewMore[productId] ? [Markup.button.callback('Buy', `buy_${productId}`)] : [])
@@ -208,11 +203,11 @@ module.exports = {
                                 [
                                     Markup.button.callback('Go To Checkout', 'Checkout')
                                 ]
-                            ] : (ctx.session.viewMore[productId] ? [
+                            ]:[] /* : (ctx.session.viewMore[productId] ? [
                                 [
                                     Markup.button.callback('🛒 Buy', `buy_${productId}`)
                                 ]
-                            ] : []))
+                            ] : []) */)
                         ])
                     }
 
@@ -222,7 +217,7 @@ module.exports = {
                         type: 'product',
                         productId: productId
                     };
-                } else if (product.video) {
+                } else if (product?.video) {
                     console.log("vedio...............", product.video.videoUrl);
                     const message = await ctx.replyWithVideo(Input.fromURLStream(product?.video?.videoUrl || ''),/* { source: product?.video?.videoUrl }, */ {
                         caption: telegramMessage,
@@ -230,14 +225,13 @@ module.exports = {
                         ...Markup.inlineKeyboard([
                             !product.quantity/*   === 0 */ ? [
                               
-
-                                ctx.session.viewMore[productId] ? Markup.button.callback('🔽 View Less', `viewLess_${productId}`) : Markup.button.callback('View More', `viewMore_${productId}`),
+                                Markup.button.callback('🛒 Buy', `buy_${productId}`)
 
                                 // Markup.button.callback('➡️', `next_${productId}`),
                                 // ...(ctx.session.viewMore[productId] ? [Markup.button.callback('Buy', `buy_${productId}`)] : [])
                             ] : [],
                             ...(product.quantity > 0 ? [
-                                [
+                                [ 
                                     Markup.button.callback('-', `removeQuantity_${productId}`),
                                     Markup.button.callback(`${product.quantity}`, `quantity_${productId}`),
                                     Markup.button.callback('+', `addQuantity_${productId}`)
@@ -246,11 +240,7 @@ module.exports = {
                                 [
                                     Markup.button.callback('Checkout', `checkout`)
                                 ]
-                            ] : (ctx.session.viewMore[productId] ? [
-                                [
-                                    Markup.button.callback('🛒 Buy', `buy_${productId}`)
-                                ]
-                            ] : []))
+                            ] :[])
                         ])
                     }
 

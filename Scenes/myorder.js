@@ -29,12 +29,12 @@ myOrderScene.enter(async (ctx) => {
     if (userOrders.length === 0) {
         if (ctx.session.cleanUpState) {
             ctx.session.cleanUpState.forEach(async (message) => {
-                console.log("%c called deleteing when its leave", "color: red;")
+                // console.log("%c called deleteing when its leave", "color: red;")
                 if (message?.type === 'myorder' || message?.type === 'orderhistory') {
                     try {
                         await ctx.telegram.deleteMessage(ctx.chat.id, message?.id);
                     } catch (error) {
-                        console.log("error while deleting.......", error)
+                        // console.log("error while deleting.......", error)
                     }
     
                 }
@@ -101,7 +101,7 @@ myOrderScene.enter(async (ctx) => {
                         }
 
                     }else if(orderItems[0]?.product?.video){
-                        console.log("there is a prodcut...............",orderItems[0]?.product?.video)
+                        // console.log("there is a prodcut...............",orderItems[0]?.product?.video)
                         const orderMessage = await ctx.replyWithVideo(orderItems[0]?.product?.video?.videoUrl, {
                             caption: formatTelegramMessage(orderItems[0].product, orderItems[0].quantity),
                             
@@ -213,12 +213,12 @@ myOrderScene.hears("My Order History", async (ctx) => {
     try {
         if (ctx.session.cleanUpState) {
             ctx.session.cleanUpState.forEach(async (message) => {
-                console.log("%c called deleteing when its leave", "color: red;")
+                // console.log("%c called deleteing when its leave", "color: red;")
                 if (message?.type === 'myorder' || message?.type === 'orderhistory') {
                     try {
                         await ctx.telegram.deleteMessage(ctx.chat.id, message?.id);
                     } catch (error) {
-                        console.log("error while deleting.......", error)
+                        // console.log("error while deleting.......", error)
                     } 
     
                 }
@@ -271,7 +271,7 @@ myOrderScene.hears("My Order History", async (ctx) => {
                         { source: imageBuffer },
                         {
                             caption: formatTelegramMessage(order?.orderItems[0]?.product, order?.orderItems[0]?.quantity),
-                            ...Markup.inlineKeyboard([Markup.button.url("Reorder", `https://t.me/testecommerce12bot?start=chat_${order?.orderItems[0]?.product?._id}`)]),
+                            ...Markup.inlineKeyboard([Markup.button.url("Reorder", `https://t.me/telitesporttgbot?start=chat_${order?.orderItems[0]?.product?._id}`)]),
                         },
         
                     );

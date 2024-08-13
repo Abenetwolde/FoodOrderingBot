@@ -33,7 +33,7 @@ function secondsToDuration(seconds) {
 }
 module.exports = {
     updateSceneDuration: async function (ctx, durationMs,sceneName) {
-        console.log("reach updateSceneDuration")
+        // console.log("reach updateSceneDuration")
         
         try {
             const durationMinutes = Math.floor(durationMs / 60000);

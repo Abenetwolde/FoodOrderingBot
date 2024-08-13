@@ -1,13 +1,14 @@
 const axios = require('axios');
 const sharp = require('sharp');
 const Product = require('../../Model/product');
+const config = require('../../config');
 
 async function cronSendProductToChannel(productId, product, isCart) {
     try {
         const formatTelegramMessage = (product) => {
             const { name, description, images, price, available, warranty, category, highlights } = product;
             const formattedHighlights = highlights?.map((highlight) => `${highlight}`).join(', ');
-            const formattedButton = images.length === 1 ? '' : `\n\n[Buy](https://t.me/testecommerce12bot?start=chat_${productId}) `;
+            const formattedButton = images.length === 1 ? '' : `\n\n[Buy](https://t.me/elitesporttgbot?start=chat_${productId}) `;
 
             return `
 ${category?.icon} ${name} ${category?.icon}
@@ -25,11 +26,11 @@ ${formattedButton}
         const caption = `${formatTelegramMessage(product)}`;
         const paginationKeyboard = {
             inline_keyboard: [
-                [{ text: 'Order 📔', url: `https://t.me/testecommerce12bot?start=chat_${productIdString}` }],
+                [{ text: 'Order 📔', url: `https://t.me/elitesporttgbot?start=chat_${productIdString}` }],
             ],
         };
 
-        const channelId = -1002011345443;
+        const channelId = config.telegramChannelId;
         const images = product?.images.map(image => image.imageUrl);
 
         let mediaGroup = [];
@@ -49,7 +50,7 @@ ${formattedButton}
             // const imageBuffer = await sharp(response.data)
             //     .resize(200, 200)
             //     .toBuffer();
-            console.log(images)
+
             const messageData = {
                 chat_id: channelId,
                 photo: image,
@@ -58,7 +59,7 @@ ${formattedButton}
                 reply_markup: JSON.stringify(paginationKeyboard),
             };
             try {
-                const sentMessage = await axios.post(`https://api.telegram.org/bot6372866851:AAE3TheUZ4csxKrNjVK3MLppQuDnbw2vdaM/sendPhoto`, messageData);
+                const sentMessage = await axios.post(`https://api.telegram.org/bot7237914767:AAFDdzU4H4v8O-y2XvHVSbMvI82OEh7uSfE/sendPhoto`, messageData);
                 await Product.findByIdAndUpdate(product._id, { channelMessageId: sentMessage.message_id });
             } catch (error) {
                 console.log(error)
@@ -71,7 +72,7 @@ ${formattedButton}
                 reply_markup: JSON.stringify(paginationKeyboard),
             };
 
-            const sentMessage = await axios.post(`https://api.telegram.org/bot6372866851:AAE3TheUZ4csxKrNjVK3MLppQuDnbw2vdaM/sendMediaGroup`, messageData);
+            const sentMessage = await axios.post(`https://api.telegram.org/bot7237914767:AAFDdzU4H4v8O-y2XvHVSbMvI82OEh7uSfE/sendMediaGroup`, messageData);
 
             await Product.findByIdAndUpdate(product._id, { channelMessageId: sentMessage.message_id });
         } else if (product?.video?.videoUrl) {

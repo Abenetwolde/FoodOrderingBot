@@ -8,6 +8,8 @@ const apiUrl = 'http://localhost:5000';
 const UserKPI=require("../Model/KpiUser");
 const { updateSceneDuration } = require("../Utils/calculateTimeSpent");
 const { updateClicks } = require("../Utils/calculateClicks");
+const { createPayment } = require("../Database/payment");
+const user = require("../Model/user");
 const noteScene = new Scenes.BaseScene("NOTE_SCENE")
 noteScene.enter(async (ctx) => {
     const enterTime = new Date();
@@ -221,7 +223,7 @@ noteScene.action('confirm', async (ctx) => {
          summary+= `📲 Phone Number For Contact:${phoneNumber}\n`
         }
     summary += `\nTotal Quantity: ${totalQuantity}\nTotal Price: <u>${totalPrice} ETB</u>`;
-    console.log("summary",summary)
+    // console.log("summary",summary)
     const message =   await ctx.replyWithHTML(summary, {
         ...Markup.inlineKeyboard([
             [Markup.button.callback("📝 Place Order", 'make_order')],
@@ -249,7 +251,7 @@ noteScene.action("make_order", async (ctx) => {
         
         await ctx.scene.enter('paymentScene', {
             orderNumber:orderJsonParse.orderNumber,
-            totalPrice: orderJsonParse.totalPrice*100,
+            totalPrice: orderJsonParse.totalPrice,
             orderItems: orderJsonParse.orderItems,
             orderId: orderJsonParse._id.toString(),
         }); 
@@ -264,7 +266,24 @@ noteScene.action("make_order", async (ctx) => {
     const orderJson = JSON.stringify(order);
     const orderJsonParse = JSON.parse(orderJson);
 
-
+    const paymentData = {
+        telegramid:ctx.session.userid,
+        order: order?._id,
+        total_amount: order?.totalPrice,
+        paymentType:"Cash"
+      
+    }
+  
+    const paymentdata=JSON.parse(JSON.stringify(paymentData))
+    try {
+        const savedPayment = await createPayment(
+            paymentdata
+        ); 
+    } catch (error) {
+        console.log(error)
+    }
+ 
+//    else{
   const message=  await ctx.replyWithHTML(`Thank you for your order!\nPayment received for Order ID: <u>${orderJsonParse.orderNumber}</u>\n.Total Amount: <u>${order.totalPrice}</u> ETB\nThe product will be delivered to you soon.`,Markup.inlineKeyboard([
     Markup.button.callback(
       `View Your Order`,"showOrder")
@@ -288,9 +307,36 @@ noteScene.action("make_order", async (ctx) => {
 
 
 noteScene.action("showOrder",async(ctx)=>{
-    await ctx.scene.enter("myOrderScene")
+    if (ctx.session.isUserRatedTheBot === null) {
+        await ctx.replyWithHTML('Please rate our bot to continue.', Markup.inlineKeyboard([
+            [Markup.button.callback('⭐', 'rate_1'), Markup.button.callback('⭐⭐', 'rate_2')],
+            [Markup.button.callback('⭐⭐⭐ ', 'rate_3'), Markup.button.callback('⭐⭐⭐⭐', 'rate_4')],
+            [Markup.button.callback('⭐⭐⭐⭐', 'rate_5')],
+            [Markup.button.callback('No thanks', 'rate_6'), Markup.button.callback('Later', 'rate_7')]
+        ]));
+    }else{
+        await ctx.scene.enter("myOrderScene")
+    }
+ 
       
     await updateClicks(ctx,"note","note")
+})
+
+
+noteScene.action(/rate_(\d)/,async(ctx)=>{
+    const userId = ctx.from.id;
+    const rating = ctx.match[1];
+console.log("rating", rating) 
+    // Update user's rating in the database
+    await user.findOneAndUpdate(
+        { telegramid: userId },
+        { isUserRatedTheBot: rating },
+        { new: true }
+    );
+ctx.session.isUserRatedTheBot=rating
+    // Send confirmation message
+    await ctx.reply(`Thank you for your feedback! You rated us ${rating} star(s).`);
+    await ctx.scene.enter("myOrderScene")
 })
 //cart
 
@@ -354,7 +400,7 @@ noteScene.action(/yes_cart:(.+)/, async (ctx) => {
 
     const cancellationResult = await removeFromCart(cartId);
     
-    console.log("cancellationResult",cancellationResult)
+    // console.log("cancellationResult",cancellationResult)
     if (cancellationResult) {
 
         await ctx.reply("Cart canceled successfully.", Markup.inlineKeyboard([

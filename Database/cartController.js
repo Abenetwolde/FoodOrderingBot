@@ -4,39 +4,49 @@ const Product = require('../Model/product'); // Import the Product model
 
 async function createCart(userId, productId, quantity) {
   try {
-    const filter = { user: userId };
-    const update = {
-      $addToSet: {
-        items: { product: productId, quantity: quantity }
-      }
-     }; 
-    const options = {
-       upsert: true, // Create new cart if it doesn't exist
-      new: true, // Return the updated cart
-      populate: {
-        path: 'items.product',
-        populate: {
-          path: 'category',
-          model: 'Category', // replace with your actual Category model name
-        },
-      }
-    };
+    // First, find the user's cart
+    let cart = await Cart.findOne({ user: userId });
 
-    const populatedCart = await Cart.findOneAndUpdate(filter, update, options).populate({
+    if (cart) {
+      // Check if the product is already in the cart
+      const itemIndex = cart.items.findIndex(item => item.product.toString() === productId);
+
+      if (itemIndex > -1) {
+        // If the item exists, update the quantity
+        cart.items[itemIndex].quantity += quantity;
+      } else {
+        // If the item does not exist, add it to the cart
+        cart.items.push({ product: productId, quantity });
+      }
+
+      // Save the updated cart
+      await cart.save();
+    } else {
+      // If the cart doesn't exist, create a new cart with the product
+      cart = new Cart({
+        user: userId,
+        items: [{ product: productId, quantity }]
+      });
+
+      await cart.save();
+    }
+
+    // Populate the cart's items with product and category data
+    const populatedCart = await Cart.findOne({ _id: cart._id }).populate({
       path: 'items.product',
       populate: {
         path: 'category',
         model: 'Category', // replace with your actual Category model name
       },
-    });;
+    });
 
-    return  populatedCart.items.find(async (item) => item?.product?._id.toString() === productId);
+    // Return the specific item that was just added or updated
+    return populatedCart.items.find(item => item.product._id.toString() === productId);
   } catch (error) {
     console.error('Error creating cart:', error);
     throw new Error('Failed to create cart.');
   }
 }
-
 
 
 
@@ -50,7 +60,7 @@ async function getCart  (userId)  {
           model: 'Category', // replace with your actual Category model name
         },
       })
-      console.log("cart get",cart)
+
       return cart || { items: [] }; // Return an empty cart if not found
     } catch (error) {
       console.error('Error fetching cart:', error);
@@ -107,7 +117,7 @@ async function updateCartItemQuantity(userId, productId, quantity) {
   }
 }
 async function DecreaseCartQuantity(userId, productId) {
-  console.log(productId)
+
   try {
     // Find the cart for the user
     const cart = await Cart.findOne({ user: userId }).populate({
@@ -122,7 +132,7 @@ async function DecreaseCartQuantity(userId, productId) {
     if (!cart) {
       throw new Error('Cart not found');
     }
-console.log("cart", cart.items[0].product)
+
     // Find the index of the product in the cart
     const productIndex = cart.items.findIndex(item => item.product._id.toString() == productId);
 
@@ -175,7 +185,7 @@ async function removeItemFromCart(cartId,productId) {
     }
   }
   async function removeFromCart(cartId,productId) {
-    console.log("cartId",cartId)
+
       try {
         const cart = await Cart.findByIdAndDelete(
           cartId,

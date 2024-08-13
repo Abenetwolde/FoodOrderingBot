@@ -21,11 +21,7 @@ const { updateClicks } = require("../Utils/calculateClicks")
 selectePaymentType.enter(async (ctx) => {
     const enterTime = new Date();
     ctx.scene.state.enterTime = enterTime;
-    // await sendProdcutSummary(ctx)
-    // const selec1message = await ctx.reply("Just two more steps before we're able to generate your invoice! 🙂",    Markup.keyboard([
-    //     ["🏠 Back to Home"]
-    // ]).resize())
-
+ 
     const selec2message = await ctx.reply(ctx.i18next.t("Paymenttype"), Markup.inlineKeyboard([
         [Markup.button.callback("Pay Online 💳", 'online'),
         Markup.button.callback("Pay On Cash 💵", 'cash'),],
@@ -103,7 +99,7 @@ selectePaymentType.leave(async (ctx) => {
             const durationFormatted = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     
             // Check if the user already exists in the database
-            let existingUserKPI = await UserKPI.findOne({ telegramId: ctx.from.id });
+            let existingUserKPI = await UserKPI.findOne({ telegramid: ctx.from.id });
             if (existingUserKPI) {
                 // If the user exists, update the scene details
                 existingUserKPI.scene.push({
@@ -116,7 +112,7 @@ selectePaymentType.leave(async (ctx) => {
             } else {
                 // If the user doesn't exist, create a new UserKPI document
                 const newUserKPI = new UserKPI({
-                    telegramId: ctx.from.id,
+                    telegramid: ctx.from.id,
                     scene: [{
                         name: 'SelectScene',
                         enterTime: enterTime,

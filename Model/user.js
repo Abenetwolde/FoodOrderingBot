@@ -35,8 +35,8 @@ const userSchema = new mongoose.Schema({
   },
   from: {
     type: String,
-    default: 'BOT',
-    enum: ['BOT', 'CHANNEL','INVITATION'],
+    default: 'Bot',
+    enum: ['Bot', 'Channel','Refferal'],
     required: [true, 'status is required'],
   },
   language: {
@@ -64,16 +64,11 @@ const userSchema = new mongoose.Schema({
     },
   },
   timestamp: { type: Date, default: Date.now },
-  // spentTime: [{
-  //   duration: {
-  //     type: Number,
-  //     default: 0,
-  //   },
-  //   date: {
-  //     type: Date,
-  //     default: Date.now,
-  //   },
-  // }],
+
+  isUserRatedTheBot: {
+    type: String,  // This will store the rating value (1-5)
+    default: null
+},
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -20,7 +20,7 @@ async function checkUserToken(chatId ,ctx) {
 //     console.log("sesstion found",session)
 
     // Check if a session exists for the user and if it has a token
-    console.log("ctx.session",ctx.session)
+
     if (ctx.session && ctx.session.token) {
       console.log('There is a token set');
       return ctx.session.token;

@@ -18,15 +18,17 @@ const { MongoClient } = require('mongodb');
 const rateLimit = require('telegraf-ratelimit')
 const { createUser, updateUserLanguage } = require('./Database/UserController.js');
 const UserKPI = require("./Model/KpiUser");
-const bot = new Telegraf("6372866851:AAE3TheUZ4csxKrNjVK3MLppQuDnbw2vdaM", {
+const config = require('./config/index.js');
+const bot = new Telegraf(config.telegramBotToken, {
   timeout: Infinity
-});
+}); 
 require("dotenv").config();
 const connectDatabase = require('./config/database.js');
 const { getSingleProduct, getAllProducts } = require('./Database/productcontroller.js');
 const User = require('./Model/user.js');
 const { sendProductToChannel } = require('./Scenes/Admin/sendProduct.js');
 const { cronSendProductToChannel } = require('./Scenes/Cron/index.js');
+
  
 connectDatabase()
 bot.use(i18next({
@@ -162,19 +164,20 @@ mongoClient.connect()
       }
       return next();
     });
-
-
+ 
+    bot.use(async (ctx, next) => {
+      if (ctx.session) {
+        if (typeof ctx.session.isUserRatedTheBot === 'undefined') {
+          ctx.session.isUserRatedTheBot = null;  // or false, depending on your logic
+        }
+      }
+      await next();
+    });
     bot.use(stage.middleware())
 
 
 
 
-    bot.use(async (ctx, next) => {
-      // Save user start time to the context
-      ctx.session.startTime = new Date().getTime();
-      // Continue with the next middleware
-      await next();
-    });
     const calculateDuration = (startTime, endTime) => {
       return new Date(endTime) - new Date(startTime);
     };
@@ -252,44 +255,13 @@ mongoClient.connect()
 
     bot.command('kpi', kpiCommandHandler);
 
-    //   const checkLanguageMiddleware = async (ctx, next) => {
-    //     // Check if the user came from a channel post
-    //     const startCommand = ctx.message.text.split(' ');
-    //     if (startCommand.length === 2 && startCommand[1].startsWith('chat_')) {
-    //         const questionId = startCommand[1].replace('chat_', '');
-    //         console.log("id from search scene MIDDLEWARE:", questionId);
-
-    //         // Check if language is selected
-    //         if (!ctx.session.locale) {
-    //             // Prompt the user to choose a language
-    //             const message = await ctx.reply('Please choose your language', Markup.inlineKeyboard([
-    //                 Markup.button.callback('English', 'set_lang_channel:en'),
-    //                 Markup.button.callback('አማርኛ', 'set_lang_channel:am')
-    //             ]));
-    //             ctx.session.languageMessageId = message.message_id;
-    //             return; // Stop further execution until the user selects a language
-    //         }
-    //     }
-    //     // Language is selected or not applicable, proceed to the next middleware or handler
-    //     await next();
-    // };
-
-    // // Apply the middleware to the bot command
-    // bot.start(checkLanguageMiddleware);
-    //   // Apply the startMiddleware to all scenes
-
 
 
     bot.start(async (ctx) => {
 
-
-      console.log("ctx.session.locale", ctx.session.locale)
       const startCommand = ctx.message.text.split(' ');
       if (startCommand.length === 2 && startCommand[1].startsWith('chat_')) {
         const questionId = startCommand[1].replace('chat_', '');
-        console.log("id from search scene", questionId)
-
-        console.log("if the user is select the langunage", ctx.session.locale)
         try {
           if (!ctx.session.locale) {
             return ctx.scene.enter("channelHandeler", { pid: questionId })
@@ -301,12 +273,12 @@ mongoClient.connect()
           if (product) {
             // product.quantity = typeof product.quantity === 'number' ? product.quantity : 0;
             const singleP = await JSON.parse(product)
-            // Update the quantity based on the action
+          
             await ctx.scene.enter('product', { product: singleP });
 
           } else {
             console.error('Product not found.');
-            // Handle the case when the product is not found
+        
           }
 
 
@@ -315,19 +287,19 @@ mongoClient.connect()
         }
 
       } else if (startCommand.length === 2 && startCommand[1].startsWith('invite_')) {
-        const channelId = -1002011345443;
+        const channelId = config.telegramChannelId;
         const userId = ctx.from.id
         const isMember = await bot.telegram.getChatMember(channelId, userId)
           .then((chatMember) => chatMember.status === 'member' || chatMember.status === 'administrator' || chatMember.status === 'creator')
           .catch((err) => {
-            console.error('Error checking channel membership:', err);
+            // console.error('Error checking channel membership:', err);
             return false;
           });
         if (!isMember) {
           ctx.reply(
-            "ctx.from.id,",
+            "Welcome to ELiteSport",
             Markup.inlineKeyboard([
-              [Markup.button.url('📥 በመጀመሪያ የቴሌግራም ቻናላችንን መቀላቀል አለብዎ ', "https://t.me/takeitorle"),
+              [Markup.button.url('📥 በመጀመሪያ የቴሌግራም ቻናላችንን መቀላቀል አለብዎ ', config?.channellink),
 
               ],
               [Markup.button.callback('🔄 Restart', 'restart')]
@@ -343,18 +315,18 @@ mongoClient.connect()
             user = new User({
               telegramid: ctx.from.id,
               first_name: ctx.from.first_name,
-              last_name: ctx.from.last_name,
+              last_name: ctx.from?.last_name,
               username: ctx.from.username || null,
               is_bot: ctx.from.is_bot || false,
-              from: "INVITATION",
+              from: "Refferal",
               language: ctx.session.locale
             });
 
           }
-          if (telegramid && user.invitedBy == null) {
+          if (telegramid && user?.invitedBy == null) {
             user.invitedBy = telegramid;
-            if (user.invitedBy) {
-              const inviter = await User.findOne({ telegramid: user.invitedBy });
+            if (user?.invitedBy) {
+              const inviter = await User.findOne({ telegramid: user?.invitedBy });
 
               if (inviter) {
                 await User.findOneAndUpdate(
@@ -369,7 +341,7 @@ mongoClient.connect()
               ctx.session.userid = user._id.toString();
               // Generate lottery numbers (if applicable)
               const invitedUsersCount = inviter.lotteryNumbers.invitedUsers || 0;
-              console.log(invitedUsersCount);
+              // console.log(invitedUsersCount);
               if (invitedUsersCount > 0 && invitedUsersCount === 2/* invitedUsersCount % 10 === 0 */) {
                 const lotteryNumber = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit number
                 await inviter.lotteryNumbers.number.push(lotteryNumber);
@@ -377,7 +349,7 @@ mongoClient.connect()
               }
               // ctx.session.userid = user.userid.toString();
               await user.save()
-              ctx.reply(`this is your telegram id ${telegramid}`)
+              // ctx.reply(`this is your telegram id ${telegramid}`)
 
               await inviter.save()
 
@@ -416,7 +388,7 @@ mongoClient.connect()
           ]))
           ctx.session.languageMessageId = message.message_id;
           const userToken = await checkUserToken(`${ctx.from.id}`, ctx)
-          console.log("userToken", userToken)
+
 
           if (userToken == null) {
             try {
@@ -429,8 +401,8 @@ mongoClient.connect()
                 language: ctx.session.locale
               });
               if (response) {
-                console.log("response.data", response)
-
+                // console.log("response.data", response)
+   
            
                 ctx.session.userid = response.user._id.toString();
                 ctx.session.token = response.token;
@@ -447,7 +419,7 @@ mongoClient.connect()
 
         } else {
           const userToken = await checkUserToken(`${ctx.from.id}`, ctx)
-          console.log("userToken", userToken)
+    
 
           if (userToken == null) {
             try {
@@ -459,7 +431,7 @@ mongoClient.connect()
                 is_bot: ctx.from.is_bot || false,
                 language: ctx.session.locale
               });
-              console.log("response.data", response)
+              // console.log("response.data", response)
               ctx.session.userid = response.user._id.toString();
               await ctx.reply(response.token)
 
@@ -471,7 +443,7 @@ mongoClient.connect()
               if (error.message == 'User already exists!') {
                 await ctx.reply("User already exists! ")
               }
-              console.log(error.response)
+              // console.log(error.response)
             }
           }
           // Whether the user was just registered or is already registered, enter the home scene.
@@ -528,11 +500,6 @@ mongoClient.connect()
       }
       const updateResult = await updateUserLanguage(ctx.from.id, ctx.session.locale);
 
-      if (updateResult.success) {
-        console.log(updateResult.message);
-      } else {
-        console.error(updateResult.message);
-      }
       if (ctx.scene) {
         await ctx.scene.enter('homeScene');
       } else {
@@ -551,13 +518,9 @@ mongoClient.connect()
       }
       const updateResult = await updateUserLanguage(ctx.from.id, ctx.session.locale);
 
-      if (updateResult.success) {
-        console.log(updateResult.message);
-      } else {
-        console.error(updateResult.message);
-      }
+ 
       const startCommand = ctx.callbackQuery.message.text.split(' ');
-      console.log("start cpmmand", startCommand)
+
       if (startCommand.length === 2 && startCommand[1].startsWith('chat_')) {
         const questionId = startCommand[1].replace('chat_', '');
         console.log("action language:", questionId);
@@ -584,7 +547,7 @@ mongoClient.connect()
 
     })
     bot.action('restart', async (ctx) => {
-      const channelId = -1002011345443;
+      const channelId =config.telegramChannelId;
       const userId = ctx.from.id
       const isMember = await bot.telegram.getChatMember(channelId, userId)
         .then((chatMember) => chatMember.status === 'member' || chatMember.status === 'administrator' || chatMember.status === 'creator')
@@ -642,12 +605,12 @@ mongoClient.connect()
             'Wait some minutes and try again'
           )
         }
-        const adminChatId = '2126443079'
+        const adminChatId = config.admintelegramId
         bot.telegram.sendMessage(adminChatId, '[' + ctx.from.first_name + '](tg://user?id=' + ctx.from.id + ') has got an error.\nError text: ' + errorMessage, { parse_mode: 'markdown' })
       } else {
         bot.telegram.sendMessage(adminChatId, 'There`s an error:' + err.toString())
       }
-    }
+    } 
 
     bot.catch((err) => {
       sendError(err)
@@ -656,42 +619,7 @@ mongoClient.connect()
     process.on('uncaughtException', (err) => {
       sendError(err)
     })
-    // bot.use(async (ctx, next) => {
-    //   const telegramid = ctx.from.id;
-    //   const userSpentTime = await User.findOne({ telegramid });
-
-    //   if (userSpentTime) {
-    //     // Calculate the duration spent in milliseconds
-    //     const currentTime = new Date().getTime();
-    //     const duration = currentTime - ctx.session.startTime;
-
-    //     // Update user spent time with current date
-    //     const currentDate = new Date();
-    //     const currentDay = currentDate.getDate();
-    //     const currentMonth = currentDate.getMonth();
-    //     const currentYear = currentDate.getFullYear();
-
-    //     const spentTimeEntryIndex = userSpentTime.spentTime?.findIndex(entry => {
-    //       const entryDate = new Date(entry.date);
-    //       return entryDate.getDate() === currentDay && entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-    //     });
-
-    //     if (spentTimeEntryIndex !== -1) {
-    //       // Update existing spent time entry
-    //       userSpentTime?.spentTime[spentTimeEntryIndex].duration += duration; // Add duration for each interaction
-    //     } else {
-    //       // Create a new spent time entry for the current day
-    //       userSpentTime.spentTime.push({ duration, date: currentDate });
-    //     }
-
-    //     // Save the updated user spent time to the database
-    //     await userSpentTime.save();
-    //   }
-
-    //   // Continue with the next middleware
-    //   await next();
-    // });
-  })
+      })
 
 
 /* This code uses the getWebhookInfo method to check 
@@ -740,8 +668,7 @@ bot.command('mariya', async (ctx) => {
         ]),
       }
     );
-    // const res = await bot.telegram.sendMessage("355514342", 'Hey Maria, How are you?This is Lelasew, my Telegram is accidentally banned(idk what happen) you can reach me now at @abnetw see you!')
-    console.log("res...........", res)
+
   } catch (err) {
     console.log('An error occurred:', err)
   }
@@ -842,168 +769,6 @@ bot.on('location', async (ctx) => {
 });
 
 
-// bot.on("successful_payment", async (ctx) => {
-//   console.log("Success payment from   index File", ctx.message.successful_payment)
-//   // ctx.session.cleanUpState = ctx.session.cleanUpState.map(ctx.session.cleanUpState, function (message) {         // Convert old cart message ID into text to prune
-//   //     if (message.type === "invoice") {
-//   //         message.type = "receipt"
-//   //     }
-//   //     return message
-//   // })
-//   const payment = ctx.message.successful_payment
-//   const invoice = JSON.parse(payment.invoice_payload)
-//   const paymentData = {
-//       user:ctx.from.id,
-//       order: ctx.scene.state.orderId,
-//       total_amount: ctx.message.successful_payment.total_amount,
-//       invoice_id: invoice.id,
-//       telegram_payment_charge_id: ctx.message.successful_payment.telegram_payment_charge_id,
-
-//   }
-//   const paymentdata=JSON.parse(JSON.stringify(paymentData))
-//   console.log("paymetn data", )
-//   try {
-//       const savedPayment = await createPayment(
-//           paymentdata
-//       );
-//      const orderupdate={
-//           orderId:ctx.scene.state.orderId,
-//           phoneNo:payment.order_info.phone_number,
-//           paymentStatus:"completed",
-//           orderStatus:"pending",
-//           location:ctx.session.orderInformation?.location
-//       }
-// const updatedOrder=await updateOrder(orderupdate)
-// // console.log("orderupdate",orderinfo)
-// let summary = '';
-// let totalPrice = 0;
-// summary += `Order Details:`
-// // const updatedOrder = await updateOrderStatus(ctx.scene.state.orderId, 'completed');
-// // console.log('Order status updated successfully:', updatedOrder.orderItems);
-// for (const orderItem of updatedOrder.orderItems) {
-
-//   summary += `🛒 ${orderItem.product.name}: ${orderItem.quantity} x ${orderItem.product.price} = ${orderItem.quantity * orderItem.product.price} ETB\n`;
-//   totalPrice += orderItem.quantity * orderItem.product.price ;
-//   // await ctx.reply(
-//   //     `Order Details:
-//   //                Product: ${orderItem.product.name}
-//   //                Quantity: ${orderItem.quantity}
-//   //                Total Price: ${orderItem.quantity * orderItem.product.price} ETB
-//   //                Order ID: ${updatedOrder._id}`,
-//   // );
-
-//   await product.findByIdAndUpdate(orderItem.product._id, {
-//       $inc: {   orderQuantity: +orderItem.quantity }
-//   });
-// }
-// summary += `\nTotal Price: <u>${totalPrice} ETB</u>`;
-
-// // Send a separate message about the product
-// await ctx.reply(`Thank you for your order! The product will be delivered to you soon.`);
-// await ctx.replyWithHTML(summary),
-// ctx.session.orderInformation={}   
-//   } catch (error) {
-//       console.error('Error creating payment:', error);
-//       // Handle error
-//   }
-
-// await ctx.scene.enter("homeScene")
-// })
-
-// Attach the link text to a message
-bot.command('link', async (ctx) => {
-  const linkText = '(\n\n[Buy](https://t.me/testecommerce12bot?start=chat_${productId})';
-  const resizeimage = 'https://images.pexels.com/photos/5084674/pexels-photo-5084674.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'
-  const response = await axios.get(resizeimage, { responseType: 'arraybuffer' });
-  const imageBuffer = await sharp(response.data)
-    .resize(200, 200)
-    .toBuffer();
-  await ctx.replyWithPhoto({ source: imageBuffer }, { caption: `[Buy](https://t.me/testecommerce12bot?start=chat_${123}`, parse_mode: 'Markdown' });
-  // ctx.replyWithMarkdown(`[Buy](https://t.me/testecommerce12bot?start=chat_${123}`);
-});
-
-
-// bot.catch(async (err, ctx) => {
-//   console.log(`Error while handling update ${ctx.update.update_id}:`, err)
-
-//   const errorCode = err.response && err.response.error_code;
-//   let errorMessage = '';
-
-//   switch (errorCode) {
-//     case 400:
-//       errorMessage = 'Bad Request: The request was not understood or lacked required parameters.';
-//       break;
-//     case 403:
-//       errorMessage = 'Forbidden: The bot was blocked by the user.';
-//       break;
-//     case 404:
-//       errorMessage = 'Not Found: The requested resource could not be found.';
-//       break;
-//     case 409:
-//       errorMessage = 'Conflict: The request could not be completed due to a conflict with the current state of the resource.';
-//       break;
-//     case 429:
-//       errorMessage = 'Too Many Requests: The bot is sending too many requests to the Telegram servers.';
-//       break;
-//     case 500:
-//       errorMessage = 'Internal Server Error: An error occurred on the server.';
-//       break;
-//     default:
-//       errorMessage = 'An error occurred while processing your request.';
-//   }
-//   const adminChatId = '2126443079'
-//   // Notify the user
-//   await ctx.telegram.sendMessage(adminChatId, errorMessage).catch((err) => {
-//     console.log('Failed to send error message to user:', err);
-//   });
-//   // if (ctx && ctx.chat && ctx.chat.id) {
-//   await ctx.telegram.sendMessage(adminChatId, errorMessage).catch((err) => {
-//     console.log('Failed to send error message to user:', err);
-//   });
-//   // }
-// })
-bot.command('time', async (ctx) => {
-  const telegramid = ctx.from.id;
-  const activities = await User.find({ telegramid }).sort({ timestamp: 1 });
-
-  let totalTime = 0;
-  for (let i = 1; i < activities.length; i++) {
-    const prevTimestamp = activities[i - 1].timestamp;
-    const currentTimestamp = activities[i].timestamp;
-    const duration = currentTimestamp - prevTimestamp;
-    totalTime += duration;
-  }
-
-  const hours = Math.floor(totalTime / 3600000);
-  const minutes = Math.floor((totalTime % 3600000) / 60000);
-
-  ctx.reply(`You've spent ${hours} hours and ${minutes} minutes on this bot! 🕒`);
-});
-bot.command('spendtimeperday', async (ctx) => {
-  const telegramid = ctx.from.id;
-  const userSpentTime = await User.findOne({ telegramid });
-
-  if (userSpentTime) {
-    const currentDate = new Date();
-    const currentDay = currentDate.getDate();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-
-    const spentTimeEntry = userSpentTime.spentTime.find(entry => {
-      const entryDate = new Date(entry.date);
-      return entryDate.getDate() === currentDay && entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear;
-    });
-
-    if (spentTimeEntry) {
-      const durationInMinutes = spentTimeEntry.duration / (1000 * 60); // Convert milliseconds to minutes
-      ctx.reply(`You have spent ${durationInMinutes.toFixed(2)} minutes today.`);
-    } else {
-      ctx.reply('No data available for today.');
-    }
-  } else {
-    ctx.reply('No data available for you.');
-  }
-});
 
 bot.command('testDevice', async (ctx) => {
   console.log('User is using a web platform', ctx.update.message);
@@ -1044,12 +809,6 @@ process.once("SIGTERM", () => bot.stop("SIGTERM"))
 // };
 
 
-// bot.launch({
-//   dropPendingUpdates: true, polling: {
-//     timeout: 30,
-//     limit: 100,
-//   },
-// })
 
 const launch = async () => {
   try {
