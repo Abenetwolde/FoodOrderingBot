@@ -146,8 +146,7 @@
             <p>📧 <strong>User Feedback:</strong> Users can give feedback and rate the bot.</p>
           </li>
         </ul>
-      
-        <h3>Additional Functionalities</h3>
+       <h3>Additional Functionalities</h3>
         <ul>
           <li>
             <p>🌐 <strong>Localization:</strong> The bot supports both Amharic and English languages.</p>
