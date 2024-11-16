@@ -1,4 +1,4 @@
- <div>
+<div>
   <p><strong>1, Admin App Overview</strong></p>
   <p>
     The admin app for the Telegram e-commerce bot has two main sections: 
@@ -122,7 +122,6 @@
         <p>
           The bot I developed is packed with features designed to enhance shopping while taking advantage of Telegram's unique strengths:
         </p>
-      
         <h3>E-Commerce Capabilities</h3>
         <ul>
           <li>
