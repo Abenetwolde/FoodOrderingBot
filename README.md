@@ -1,5 +1,4 @@
-
-    <div>
+<div>
         <p><strong>2, Key Features of the Telegram E-Commerce Bot</strong></p>
         <p>
           The bot I developed is packed with features designed to enhance shopping while taking advantage of Telegram's unique strengths:
@@ -55,6 +54,5 @@
           </li>
         </ul>
       </div>
-      
-</div>
+      </div>
 
